@@ -4,7 +4,7 @@ body {
     display: flex;
     flex-direction: column;
     font-family: sans-serif;
-    background-color: black;
+    background-color: rgb(15, 15, 15);
     color: white;
 }
 
@@ -46,11 +46,11 @@ section {
 
 .blue,
 .blue:focus {
-    background-color: #4b5efc;
+    background-color: #2d996c;
 }
 
 .blue:hover {
-    background-color: #798bf9;
+    background-color: #3ed496;
 }
 
 .dark,

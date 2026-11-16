@@ -16,24 +16,15 @@ Var oldShortcutName
 Var oldMenuDirectory
 Var appExe
 Var launchLink
-Var TitleFont
-Var SetupDialog
-Var DirEdit
-Var BrowseButton
-Var LaunchCheckbox
-Var LaunchAfter
+Var setupRoot
 
 !define MUI_ABORTWARNING
-!define MUI_CUSTOMFUNCTION_GUIINIT GuiInit
-!define MUI_BGCOLOR 0F0F0F
 
 !include "common.nsh"
 !include "MUI2.nsh"
-!include "nsDialogs.nsh"
 !include "multiUser.nsh"
 !include "${BUILD_RESOURCES_DIR}\allowOnlyOneInstallerInstance.nsh"
 !include "StrContains.nsh"
-!include "WinMessages.nsh"
 !include "LogicLib.nsh"
 
 ShowUninstDetails nevershow
@@ -114,7 +105,6 @@ RequestExecutionLevel user
   !ifdef APP_BUILD_DIR
     File /r "${APP_BUILD_DIR}\*.*"
   !else
-    !insertmacro extractEmbeddedAppPackage
     ${if} $installMode == "all"
       SetShellVarContext current
     ${endif}
@@ -127,21 +117,36 @@ RequestExecutionLevel user
   WriteUninstaller "$INSTDIR\${UNINSTALL_FILENAME}"
 !macroend
 
-!ifmacrodef licensePage
-  !insertmacro licensePage
-!endif
+!include "installUtil.nsh"
+!include "installer.nsh"
 
-PageEx custom
-  PageCallbacks SetupPageShow SetupPageLeave
-  Caption "Calculator"
-PageExEnd
+Function ExtractToOutDir
+  InitPluginsDir
+  !insertmacro extractEmbeddedAppPackage
+FunctionEnd
+
+Function OpenSetupUi
+  HideWindow
+  ; Keep the setup app outside $PLUGINSDIR. NSIS deletes that folder on exit.
+  StrCpy $setupRoot "$TEMP\CalculatorSetup"
+  CreateDirectory "$setupRoot\app"
+  SetOutPath "$setupRoot\app"
+  Call ExtractToOutDir
+
+  FileOpen $R8 "$setupRoot\install-dir.txt" w
+  FileWrite $R8 "$INSTDIR"
+  FileClose $R8
+  FileOpen $R8 "$setupRoot\installer-path.txt" w
+  FileWrite $R8 "$EXEPATH"
+  FileClose $R8
+
+  StrCpy $1 '"$setupRoot\app\${APP_EXECUTABLE_FILENAME}" --setup-ui --payload="$setupRoot"'
+  Exec $1
+  SetErrorLevel 0
+  Quit
+FunctionEnd
 
 !insertmacro MUI_PAGE_INSTFILES
-
-PageEx custom
-  PageCallbacks FinishPageShow FinishPageLeave
-  Caption "Calculator"
-PageExEnd
 
 !insertmacro MUI_UNPAGE_WELCOME
 !insertmacro MUI_UNPAGE_INSTFILES
@@ -153,166 +158,16 @@ PageExEnd
   !insertmacro customHeader
 !endif
 
-Function GuiInit
-  CreateFont $TitleFont "Segoe UI" 18 700
-  Call StyleWindow
-FunctionEnd
-
-Function StyleWindow
-  SetCtlColors $HWNDPARENT 0xFFFFFF 0x0F0F0F
-
-  GetDlgItem $0 $HWNDPARENT 1028
-  ${If} $0 <> 0
-    ShowWindow $0 ${SW_HIDE}
-  ${EndIf}
-  GetDlgItem $0 $HWNDPARENT 1034
-  ${If} $0 <> 0
-    ShowWindow $0 ${SW_HIDE}
-  ${EndIf}
-  GetDlgItem $0 $HWNDPARENT 1035
-  ${If} $0 <> 0
-    ShowWindow $0 ${SW_HIDE}
-  ${EndIf}
-  GetDlgItem $0 $HWNDPARENT 1036
-  ${If} $0 <> 0
-    ShowWindow $0 ${SW_HIDE}
-  ${EndIf}
-
-  GetDlgItem $0 $HWNDPARENT 1037
-  ${If} $0 <> 0
-    SetCtlColors $0 0xD4B83E 0x0F0F0F
-    SendMessage $0 ${WM_SETFONT} $TitleFont 1
-  ${EndIf}
-  GetDlgItem $0 $HWNDPARENT 1038
-  ${If} $0 <> 0
-    SetCtlColors $0 0xFFFFFF 0x0F0F0F
-  ${EndIf}
-FunctionEnd
-
-Function SetupPageShow
-  ${If} ${Silent}
-  ${OrIf} ${isUpdated}
-    Abort
-  ${EndIf}
-
-  Call StyleWindow
-  !insertmacro MUI_HEADER_TEXT "Calculator" "Choose where to install"
-
-  nsDialogs::Create 1018
-  Pop $SetupDialog
-  ${If} $SetupDialog == error
-    Abort
-  ${EndIf}
-  SetCtlColors $SetupDialog 0xFFFFFF 0x0F0F0F
-
-  ${NSD_CreateLabel} 0 0 100% 12u "Installs Calculator for your user account."
-  Pop $0
-  SetCtlColors $0 0xFFFFFF 0x0F0F0F
-
-  ${NSD_CreateLabel} 0 20u 100% 12u "Folder"
-  Pop $0
-  SetCtlColors $0 0xD4B83E 0x0F0F0F
-
-  !ifdef allowToChangeInstallationDirectory
-    ${NSD_CreateText} 0 34u 220u 14u "$INSTDIR"
-    Pop $DirEdit
-    SetCtlColors $DirEdit 0xFFFFFF 0x17171A
-
-    ${NSD_CreateButton} 226u 34u 54u 14u "Browse"
-    Pop $BrowseButton
-    ${NSD_OnClick} $BrowseButton OnBrowse
-  !else
-    ${NSD_CreateLabel} 0 34u 100% 24u "$INSTDIR"
-    Pop $0
-    SetCtlColors $0 0xFFFFFF 0x0F0F0F
-  !endif
-
-  ${NSD_CreateLabel} 0 58u 100% 24u "Shortcuts are added to the desktop and the Start menu."
-  Pop $0
-  SetCtlColors $0 0x646464 0x0F0F0F
-
-  GetDlgItem $0 $HWNDPARENT 1
-  SendMessage $0 ${WM_SETTEXT} 0 "STR:Install"
-  GetDlgItem $0 $HWNDPARENT 3
-  ShowWindow $0 ${SW_HIDE}
-
-  nsDialogs::Show
-FunctionEnd
-
-Function OnBrowse
-  nsDialogs::SelectFolderDialog "Install Calculator to" "$INSTDIR"
-  Pop $0
-  ${If} $0 != error
-  ${AndIf} $0 != ""
-    ${NSD_SetText} $DirEdit $0
-  ${EndIf}
-FunctionEnd
-
-Function SetupPageLeave
-  !ifdef allowToChangeInstallationDirectory
-    ${NSD_GetText} $DirEdit $INSTDIR
-    ${If} $INSTDIR == ""
-      MessageBox MB_OK|MB_ICONEXCLAMATION "Choose a folder."
-      Abort
-    ${EndIf}
-    !insertmacro ensureInstallDir
-  !endif
-FunctionEnd
-
-Function FinishPageShow
-  ${If} ${Silent}
-    Abort
-  ${EndIf}
-
-  Call StyleWindow
-  !insertmacro MUI_HEADER_TEXT "Calculator" "Finished"
-
-  nsDialogs::Create 1018
-  Pop $SetupDialog
-  ${If} $SetupDialog == error
-    Abort
-  ${EndIf}
-  SetCtlColors $SetupDialog 0xFFFFFF 0x0F0F0F
-
-  ${NSD_CreateLabel} 0 0 100% 16u "Calculator is installed."
-  Pop $0
-  SetCtlColors $0 0xD4B83E 0x0F0F0F
-  SendMessage $0 ${WM_SETFONT} $TitleFont 1
-
-  ${NSD_CreateLabel} 0 22u 100% 24u "$INSTDIR"
-  Pop $0
-  SetCtlColors $0 0xFFFFFF 0x0F0F0F
-
-  !ifndef HIDE_RUN_AFTER_FINISH
-    ${NSD_CreateCheckbox} 0 52u 100% 14u "Launch Calculator"
-    Pop $LaunchCheckbox
-    ${NSD_SetState} $LaunchCheckbox ${BST_CHECKED}
-    SetCtlColors $LaunchCheckbox 0xFFFFFF 0x0F0F0F
-  !endif
-
-  GetDlgItem $0 $HWNDPARENT 1
-  SendMessage $0 ${WM_SETTEXT} 0 "STR:Finish"
-  GetDlgItem $0 $HWNDPARENT 3
-  ShowWindow $0 ${SW_HIDE}
-
-  nsDialogs::Show
-FunctionEnd
-
-Function FinishPageLeave
-  !ifndef HIDE_RUN_AFTER_FINISH
-    ${NSD_GetState} $LaunchCheckbox $LaunchAfter
-    ${If} $LaunchAfter == ${BST_CHECKED}
-      Call LaunchInstalledApp
-    ${EndIf}
-  !endif
-FunctionEnd
-
 Function LaunchInstalledApp
   HideWindow
   !insertmacro StartApp
 FunctionEnd
 
 Function .onInit
+  ${IfNot} ${Silent}
+    HideWindow
+  ${EndIf}
+
   Call setInstallSectionSpaceRequired
   SetOutPath $INSTDIR
   ${LogSet} on
@@ -341,10 +196,12 @@ Function .onInit
     InitPluginsDir
     !insertmacro addLicenseFiles
   !endif
-FunctionEnd
 
-!include "installUtil.nsh"
-!include "installer.nsh"
+  ${IfNot} ${Silent}
+  ${AndIfNot} ${UAC_IsInnerInstance}
+    Call OpenSetupUi
+  ${EndIf}
+FunctionEnd
 
 Section "install" INSTALL_SECTION_ID
   !ifndef INSTALL_MODE_PER_ALL_USERS
@@ -403,6 +260,9 @@ Section "install" INSTALL_SECTION_ID
   ${endIf}
 
   SetOutPath $INSTDIR
+  !ifndef APP_BUILD_DIR
+    Call ExtractToOutDir
+  !endif
 
   !ifdef UNINSTALLER_ICON
     File /oname=uninstallerIcon.ico "${UNINSTALLER_ICON}"

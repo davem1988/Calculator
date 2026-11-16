@@ -1,3 +1,10 @@
+if (process.argv.includes('--setup-ui')) {
+    require('./setup').start();
+} else {
+    startCalculator();
+}
+
+function startCalculator() {
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
@@ -70,3 +77,4 @@ app.on('window-all-closed', () => {
         app.quit();
     }
 });
+}

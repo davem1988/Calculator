@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Install Calculator</title>
+    <link rel="stylesheet" href="setup.css">
+</head>
+<body>
+    <div class="window">
+        <header class="drag">
+            <div>
+                <p class="eyebrow">Setup</p>
+                <h1>Calculator</h1>
+            </div>
+            <button id="close" class="close no-drag" type="button" aria-label="Close">×</button>
+        </header>
+
+        <section id="form-view">
+            <p class="lead">Install Calculator on this PC.</p>
+            <label class="field-label" for="dir">Folder</label>
+            <div class="path-row">
+                <input id="dir" class="no-drag" type="text" spellcheck="false" aria-label="Install folder">
+                <button id="browse" class="no-drag" type="button">Browse</button>
+            </div>
+            <p class="hint">Shortcuts are added to the desktop and the Start menu.</p>
+            <label class="launch no-drag">
+                <input id="launch" type="checkbox" checked>
+                <span>Launch Calculator when finished</span>
+            </label>
+            <p id="error" class="error" hidden></p>
+            <button id="install" class="primary no-drag" type="button">Install</button>
+        </section>
+
+        <section id="progress-view" hidden>
+            <p class="lead">Installing Calculator</p>
+            <div class="track" aria-hidden="true"><span></span></div>
+            <p class="hint">This can take a moment. The window stays here until the files are in place.</p>
+        </section>
+
+        <section id="done-view" hidden>
+            <p class="lead done-title">Calculator is installed.</p>
+            <p id="done-path" class="path"></p>
+            <button id="open" class="primary no-drag" type="button">Open Calculator</button>
+        </section>
+    </div>
+    <script>
+        const formView = document.getElementById('form-view');
+        const progressView = document.getElementById('progress-view');
+        const doneView = document.getElementById('done-view');
+        const dirInput = document.getElementById('dir');
+        const error = document.getElementById('error');
+        const closeButton = document.getElementById('close');
+        const launchInput = document.getElementById('launch');
+
+        function show(view) {
+            formView.hidden = view !== formView;
+            progressView.hidden = view !== progressView;
+            doneView.hidden = view !== doneView;
+            closeButton.disabled = view === progressView;
+        }
+
+        function showError(message) {
+            error.hidden = !message;
+            error.textContent = message || '';
+        }
+
+        window.setup.defaults().then((defaults) => {
+            dirInput.value = defaults.dir;
+            dirInput.scrollLeft = dirInput.scrollWidth;
+        });
+
+        closeButton.addEventListener('click', () => window.setup.close());
+
+        document.getElementById('browse').addEventListener('click', async () => {
+            const next = await window.setup.chooseFolder(dirInput.value);
+            if (next) dirInput.value = next;
+        });
+
+        document.getElementById('install').addEventListener('click', async () => {
+            showError('');
+            show(progressView);
+            const result = await window.setup.install({
+                dir: dirInput.value,
+                launch: launchInput.checked,
+            });
+            if (!result.ok) {
+                show(formView);
+                showError(result.message || 'Setup could not finish.');
+                return;
+            }
+            if (launchInput.checked) {
+                window.setup.close();
+                return;
+            }
+            document.getElementById('done-path').textContent = result.dir;
+            show(doneView);
+        });
+
+        document.getElementById('open').addEventListener('click', async () => {
+            await window.setup.openInstalled(document.getElementById('done-path').textContent);
+            window.setup.close();
+        });
+    </script>
+</body>
+</html>

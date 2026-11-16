@@ -354,7 +354,11 @@ const settings = {
     mode: 'simple',
     angleUnit: 'deg',
     decimals: 2,
+    autoUpdate: true,
 };
+
+const updateStatus = document.getElementById('update-status');
+const autoUpdateInput = document.getElementById('auto-update');
 menuButton.addEventListener('click', (event) => {
     event.stopPropagation();
     const willOpen = appMenu.hasAttribute('hidden');
@@ -419,6 +423,44 @@ document.getElementById('decimals').addEventListener('change', (event) => {
     showPreResult();
 });
 
+autoUpdateInput.addEventListener('change', () => {
+    settings.autoUpdate = autoUpdateInput.checked;
+    saveSettings();
+    syncAutoUpdate();
+    showUpdateStatus(settings.autoUpdate
+        ? { state: 'idle' }
+        : { state: 'disabled' });
+});
+
+if (window.updates) {
+    window.updates.onStatus(showUpdateStatus);
+}
+
+function syncAutoUpdate() {
+    if (window.updates) {
+        window.updates.setEnabled(settings.autoUpdate !== false);
+    }
+}
+
+function showUpdateStatus(status) {
+    if (!settings.autoUpdate) {
+        updateStatus.textContent = 'The app will not check GitHub for new releases';
+        return;
+    }
+
+    if (status.state === 'available') {
+        updateStatus.textContent = `Downloading version ${status.version}`;
+    } else if (status.state === 'downloaded') {
+        updateStatus.textContent = `Version ${status.version} installs when you quit`;
+    } else if (status.state === 'current') {
+        updateStatus.textContent = 'You are on the latest release';
+    } else if (status.state === 'error') {
+        updateStatus.textContent = 'Could not check for updates';
+    } else {
+        updateStatus.textContent = 'New releases download in the background and install when you quit';
+    }
+}
+
 function saveSettings() {
     localStorage.setItem('calculator-settings', JSON.stringify(settings));
 }
@@ -428,7 +470,10 @@ function loadSettings() {
     Object.assign(settings, saved);
     document.getElementById('angle-unit').value = settings.angleUnit;
     document.getElementById('decimals').value = settings.decimals;
+    autoUpdateInput.checked = settings.autoUpdate !== false;
+    settings.autoUpdate = autoUpdateInput.checked;
     applyMode(settings.mode);
+    syncAutoUpdate();
 }
 
 loadSettings();

@@ -5,9 +5,14 @@
   "main": "main.js",
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/davem1988/Calculator.git"
+  },
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win"
+    "dist": "electron-builder --win",
+    "release": "electron-builder --win --publish always"
   },
   "build": {
     "appId": "com.calculator.desktop",
@@ -18,11 +23,19 @@
     },
     "files": [
       "main.js",
+      "preload.js",
       "index.html",
       "script.js",
       "style.css",
       "package.json",
       "build/icon.png"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "davem1988",
+        "repo": "Calculator"
+      }
     ],
     "win": {
       "icon": "build/icon.png",
@@ -48,5 +61,8 @@
   "devDependencies": {
     "electron": "^45.3.3",
     "electron-builder": "^26.18.0"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
   }
 }

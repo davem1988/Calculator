@@ -1,6 +1,6 @@
 {
   "name": "calculator",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A desktop calculator",
   "main": "main.js",
   "author": "",
@@ -30,13 +30,12 @@
       "package.json",
       "build/icon.png"
     ],
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "davem1988",
-        "repo": "Calculator"
-      }
-    ],
+    "publish": {
+      "provider": "github",
+      "owner": "davem1988",
+      "repo": "Calculator",
+      "releaseType": "release"
+    },
     "win": {
       "icon": "build/icon.png",
       "target": [
@@ -55,7 +54,8 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Calculator"
+      "shortcutName": "Calculator",
+      "script": "build/installer.nsi"
     }
   },
   "devDependencies": {

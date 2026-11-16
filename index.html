@@ -7,12 +7,63 @@
     <script src="./script.js" defer></script>
     <title>Calculator</title>
 </head>
-<body>
+<body data-mode="simple">
+    <header id="topbar">
+        <button id="menu-button" aria-label="Open menu" aria-expanded="false" aria-controls="app-menu">
+            <!-- cog icon -->
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.61l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.1 7.1 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.59.22-1.14.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.48a.5.5 0 0 0 .12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.83 14.13a.5.5 0 0 0-.12.61l1.92 3.32c.13.23.4.32.6.22l2.39-.96c.49.4 1.04.72 1.63.94l.36 2.54c.05.24.26.42.49.42h3.8c.24 0 .44-.18.49-.42l.36-2.54c.59-.22 1.14-.54 1.63-.94l2.39.96c.23.1.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.61l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5z"/>
+            </svg>
+        </button>
+        <div id="app-menu" class="menu" hidden>
+            <button type="button" data-menu="settings">Settings</button>
+            <div class="has-submenu">
+                <button type="button" data-menu="type" aria-expanded="false">Type</button>
+                <div id="type-menu" class="menu submenu" hidden>
+                    <button type="button" data-type="simple" aria-checked="true">Simple</button>
+                    <button type="button" data-type="scientist" aria-checked="false">Scientist</button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <dialog id="settings">
+        <form method="dialog">
+            <div class="settings-header">
+                <h2>Settings</h2>
+                <button class="settings-close" value="close" aria-label="Close settings">&times;</button>
+            </div>
+            <div class="settings-body">
+                <label class="setting">
+                    <span class="setting-copy">
+                        <span class="setting-name">Angle</span>
+                        <span class="setting-hint">Used by sin, cos, and tan</span>
+                    </span>
+                    <select id="angle-unit">
+                        <option value="deg">Degrees</option>
+                        <option value="rad">Radians</option>
+                    </select>
+                </label>
+                <label class="setting">
+                    <span class="setting-copy">
+                        <span class="setting-name">Decimal places</span>
+                        <span class="setting-hint">Digits shown after the result</span>
+                    </span>
+                    <input id="decimals" type="number" min="0" max="10" value="2">
+                </label>
+            </div>
+        </form>
+    </dialog>
     <section id="output">
+        <div id="memory-indicator" hidden>M</div>
+        <div id="pre-result"></div>
         <div id="expression"></div>
         <div id="result"></div>
     </section>
     <section id="input">
+        <button class="btn light memory" data-action="memory-clear">MC</button>
+        <button class="btn light memory" data-action="memory-recall">MR</button>
+        <button class="btn light memory" data-action="memory-add">M+</button>
+        <button class="btn light memory" data-action="memory-subtract">M-</button>
         <button class="btn light" data-action="clear" data-value="C">C</button>
         <button class="btn light" data-action="negate" data-value="+/-">+/-</button>
         <button class="btn light" data-action="mod" data-value="%">%</button>
@@ -33,6 +84,18 @@
         <button class="btn dark" data-action="number" data-value="0">0</button>
         <button class="btn dark" data-action="backspace">&#9003;</button>
         <button class="btn blue" data-action="submit" data-value="=">=</button>
+        <button class="btn light scientific-only" data-key="open" data-action="parenthesis" data-value="(">(</button>
+        <button class="btn light scientific-only" data-key="close" data-action="parenthesis" data-value=")">)</button>
+        <button class="btn light scientific-only" data-key="sin" data-action="function" data-value="sin(">sin</button>
+        <button class="btn light scientific-only" data-key="cos" data-action="function" data-value="cos(">cos</button>
+        <button class="btn light scientific-only" data-key="tan" data-action="function" data-value="tan(">tan</button>
+        <button class="btn light scientific-only" data-key="log" data-action="function" data-value="log(">log</button>
+        <button class="btn light scientific-only" data-key="ln" data-action="function" data-value="ln(">ln</button>
+        <button class="btn light scientific-only" data-key="sqrt" data-action="function" data-value="sqrt(">√</button>
+        <button class="btn light scientific-only" data-key="square" data-action="operator" data-value="**2">x²</button>
+        <button class="btn light scientific-only" data-key="power" data-action="operator" data-value="**">xʸ</button>
+        <button class="btn light scientific-only" data-key="pi" data-action="constant" data-value="π">π</button>
+        <button class="btn light scientific-only" data-key="fact" data-action="factorial" data-value="!">n!</button>
     </section>
 </body>
 </html>
